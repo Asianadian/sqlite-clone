@@ -57,13 +57,10 @@ describe 'database' do
         long_email = "a"*256
         result = run_script([
             "INSERT 1 #{long_user} #{long_email}",
-            "SELECT",
             ".exit",
         ])
         expect(result).to match_array([
-            "db > Execute success",
-            "db > (1, #{long_user}, #{long_email})",
-            "Execute success",
+            "db > String is too long",
             "db > ",
         ])
     end

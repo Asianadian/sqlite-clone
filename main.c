@@ -29,6 +29,7 @@ typedef enum {
   PREPARE_SUCCESS, 
   PREPARE_UNRECOGNIZED_STATEMENT,
   PREPARE_SYNTAX_ERROR,
+  PREPARE_STRING_TOO_LONG
 } PrepareResult;
 
 typedef enum { 
@@ -143,9 +144,34 @@ MetaCommandResult do_meta_command(InputBuffer* input_buffer, Table* table) {
   }
 }
 
+PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
+  statement->type = STATEMENT_INSERT;
+
+  char* keyword = strtok(input_buffer->buffer, " ");
+  char* id_string = strtok(NULL, " ");
+  char* username = strtok(NULL, " ");
+  char* email = strtok(NULL, " ");
+
+  if (id_string == NULL || username == NULL || email == NULL) {
+    return PREPARE_SYNTAX_ERROR;
+  }
+
+  int id = atoi(id_string);
+  
+  if (strlen(username) > COLUMN_USERNAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE) {
+    return PREPARE_STRING_TOO_LONG;
+  }
+
+  statement->row_to_insert.id = id;
+  strcpy(statement->row_to_insert.username, username);
+  strcpy(statement->row_to_insert.email, email);
+
+  return PREPARE_SUCCESS;
+}
+
 PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement) {
   if (strncmp(input_buffer->buffer, "INSERT", 6) == 0) {
-    statement->type = STATEMENT_INSERT;
+    /*statement->type = STATEMENT_INSERT;
 
     int args_assigned = sscanf(
       input_buffer->buffer, 
@@ -159,7 +185,8 @@ PrepareResult prepare_statement(InputBuffer* input_buffer, Statement* statement)
       return PREPARE_SYNTAX_ERROR;
     }
 
-    return PREPARE_SUCCESS;
+    return PREPARE_SUCCESS;*/
+    return prepare_insert(input_buffer, statement);
   }
   if (strcmp(input_buffer->buffer, "SELECT") == 0) {
     statement->type = STATEMENT_SELECT;
@@ -251,6 +278,9 @@ int main(int argc, char* argv[]) {
     switch (prepare_statement(input_buffer, &statement)) {
       case (PREPARE_SUCCESS):
         break;
+      case (PREPARE_STRING_TOO_LONG):
+        printf("String is too long\n");
+        continue;
       case (PREPARE_SYNTAX_ERROR):
         printf("Syntax error. Could not parse statement: '%s'\n", input_buffer->buffer);
         continue;
