@@ -29,7 +29,8 @@ typedef enum {
   PREPARE_SUCCESS, 
   PREPARE_UNRECOGNIZED_STATEMENT,
   PREPARE_SYNTAX_ERROR,
-  PREPARE_STRING_TOO_LONG
+  PREPARE_STRING_TOO_LONG,
+  PREPARE_NEGATIVE_ID
 } PrepareResult;
 
 typedef enum { 
@@ -157,6 +158,10 @@ PrepareResult prepare_insert(InputBuffer* input_buffer, Statement* statement) {
   }
 
   int id = atoi(id_string);
+
+  if (id < 0) {
+    return PREPARE_NEGATIVE_ID;
+  }
   
   if (strlen(username) > COLUMN_USERNAME_SIZE || strlen(email) > COLUMN_EMAIL_SIZE) {
     return PREPARE_STRING_TOO_LONG;
@@ -280,6 +285,9 @@ int main(int argc, char* argv[]) {
         break;
       case (PREPARE_STRING_TOO_LONG):
         printf("String is too long\n");
+        continue;
+      case (PREPARE_NEGATIVE_ID):
+        printf("ID must be positive\n");
         continue;
       case (PREPARE_SYNTAX_ERROR):
         printf("Syntax error. Could not parse statement: '%s'\n", input_buffer->buffer);

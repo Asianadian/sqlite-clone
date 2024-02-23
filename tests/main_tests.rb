@@ -64,4 +64,14 @@ describe 'database' do
             "db > ",
         ])
     end
+    it 'prints error message when id is negative' do
+        result = run_script([
+            "INSERT -1 a a",
+            ".exit",
+        ])
+        expect(result).to match_array([
+            "db > ID must be positive",
+            "db > ",
+        ])
+    end
 end
